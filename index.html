@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+<body style="display: flex; flex-direction: row;">
+<div id="main">
+</div>
+<div style="flex-direction: column; margin-left: 32px;" >
+    <div id="controls-div">
+        <h2>Controles</h2>
+        <div style="flex-direction: row;">
+            <button id="pause-button" onclick="pause()">Pause</button>
+            <button id="restart-button" onclick="restart()">Restart</button>
+        </div>
+    </div>
+    <div id="creatures-div" style="margin-top: 16px;">
+        <h2>Criaturas</h2>
+        <div id="creatures-list" style="flex-direction: column;">
+            <!-- <div style="border: solid; border-width: 1px;">
+                <p>Criatura 0</p>
+                <p>Alimento Consumido: 0</p>
+            </div> -->
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.1.3/pixi.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script>
+
+    //Global Variables
+    var epoch_time_display; //Texto que exibe o tempo restante da epoca
+    var quantidade_comida; // Quantidade de comida a ser criado
+    var quantidade_criaturas; // Quantidade de criaturas a serem criadas
+    var creatures = []; //Objetos de criaturas existentes
+    var foods = []; //Objetos de comida existentes
+    var epoch_time; // Tempo por época
+    var current_epoch; // Epoch atual
+    const app = new PIXI.Application(); // Aplicação
+    var paused = false;
+
+    function getRandomArbitrary(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function loadProgressHandler(loader, resource) {
+        //Display the file `url` currently being loaded
+        console.log("loading: " + resource.name); 
+
+        //Display the percentage of files currently loaded
+        console.log("progress: " + loader.progress + "%"); 
+
+        //If you gave your files names as the first argument 
+        //of the `add` method, you can access them like this
+        //console.log("loading: " + resource.name);
+        if(resource.name == "apple"){
+            for (let index = 0; index < quantidade_comida; index++) {
+                // This creates a texture from a 'bunny.png' image
+                const apple = new PIXI.Sprite(resource.texture);
+                    
+                const position_x = getRandomArbitrary(1, 24);
+                const position_y = getRandomArbitrary(1, 17);
+                    
+                // Setup the position of the bunny
+                apple.x = position_x * 32
+                apple.y = position_y * 32
+    
+                //Change the sprite's size
+                apple.width = 32;
+                apple.height = 32;
+    
+                // Place anchor in the center
+                // apple.anchor.x = 0.5;
+                // apple.anchor.y = 0.5;
+    
+                // Add the bunny to the scene we are building
+                foods.push(apple);
+                app.stage.addChild(apple);
+            }
+        }
+
+        if(resource.name == "creature"){
+            for (let index = 0; index < quantidade_criaturas; index++) {
+                // This creates a texture from a 'bunny.png' image
+                const creature = new PIXI.Sprite(resource.texture);
+                    
+                const position_x = getRandomArbitrary(1, 24);
+                const position_y = getRandomArbitrary(1, 17);
+                    
+                // Setup the position of the bunny
+                creature.x = position_x * 32
+                creature.y = position_y * 32
+
+                //Change the sprite's size
+                creature.width = 32;
+                creature.height = 32;
+
+                // Place anchor in the center
+                // apple.anchor.x = 0.5;
+                // apple.anchor.y = 0.5;
+
+                // Add the bunny to the scene we are building
+                creatures.push({
+                    id: index,
+                    ref: creature, 
+                    control: 0,
+                    score: 0,
+                    });
+                app.stage.addChild(creature);
+            }   
+        }
+    }
+
+    function setup() {
+        console.log("All files loaded");
+        let style = new PIXI.TextStyle({
+        fontFamily: "Arial",
+        fontSize: 36,
+        fill: "white",
+        stroke: '#ff3300',
+        strokeThickness: 4,
+        dropShadow: true,
+        dropShadowColor: "#000000",
+        dropShadowBlur: 4,
+        dropShadowAngle: Math.PI / 6,
+        dropShadowDistance: 6,
+        });
+        epoch_time_display = new PIXI.Text(epoch_time, style);
+        app.stage.addChild(epoch_time_display);
+        app.ticker.add(delta => gameLoop(delta));
+    }
+    
+    function gameLoop(delta){
+        if(!paused){
+
+            if(epoch_time % 30 == 0 || epoch_time == 0){
+                displayCreatureData();
+            }
+
+            if(epoch_time > 0){
+
+                
+                //Movimenta as criaturas pelo mapa no decorrer da época
+                creatures.forEach(creature => {
+                    //Muda de direção a cada 25 tempos de época
+                    if(epoch_time % 25 == 0){
+                        let control = parseInt(getRandomArbitrary(0,8));
+                        creature.control = 0;
+                    } 
+
+                    const boundary = contain(creature.ref, {x: 16, y: 16, width: app.stage.width - 16, height: app.stage.height - 16});
+                    let valid_move = false;
+
+                    console.log(creature.ref.x, app.stage.width - 64, app.stage.height - 64, boundary)
+
+                    //Enquanto não der um movimento válido sempre sorteia novamente
+                    while(!valid_move){
+                        if(creature.control == 0 && boundary != "right"){
+                            creature.ref.x += 1;
+                            valid_move = true;
+                        } else if(creature.control == 1 && boundary != "left"){
+                            creature.ref.x -= 1;
+                            valid_move = true;
+                        } else if(creature.control == 2 && boundary != "bottom"){
+                            creature.ref.y += 1;
+                            valid_move = true;
+                        } else if(creature.control == 3 && boundary != "top"){
+                            creature.ref.y -= 1;
+                            valid_move = true;
+                        } else if(creature.control == 4 && boundary != "right" && boundary != "bottom"){
+                            creature.ref.x += 1;
+                            creature.ref.y += 1;
+                            valid_move = true;
+                        } else if(creature.control == 5 && boundary != "right" && boundary != "top"){
+                            creature.ref.x += 1;
+                            creature.ref.y -= 1;
+                            valid_move = true;
+                        } else if(creature.control == 6 && boundary != "left" && boundary != "bottom"){
+                            creature.ref.x -= 1;
+                            creature.ref.y += 1;
+                            valid_move = true;
+                        } else if(creature.control == 7 && boundary != "left" && boundary != "top"){
+                            creature.ref.x -= 1;
+                            creature.ref.y -= 1;
+                            valid_move = true;
+                        }   
+                        if(!valid_move){
+                            control = parseInt(getRandomArbitrary(0,8));
+                            creature.control = control;
+                        }
+                    }
+                    
+                    //Confere se colidiu alguma comida
+                    foods.forEach(food => {    
+                        if (hitTestRectangle(creature.ref, food)) {
+                            food.tint = 0xff3300;
+                            app.stage.removeChild(food);
+                            //Remove do array de comida
+                            const index = foods.indexOf(food);
+                            if (index > -1) {
+                            foods.splice(index, 1);
+                            }
+                            creature.score++;
+                        } else {
+                            //There's no collision
+                        }
+                    });
+                });
+
+            
+                epoch_time--;
+                epoch_time_display.text = epoch_time;
+            }
+            
+            //Show score
+            if(epoch_time == 0){
+                creatures.forEach(creature => {               
+                    console.log(creature.id +" score: " + creature.score)
+                });
+
+                app.ticker.stop();
+            }
+        }
+    }
+
+    function hitTestRectangle(r1, r2) {
+        //Define the variables we'll need to calculate
+        let hit, combinedHalfWidths, combinedHalfHeights, vx, vy;
+
+        //hit will determine whether there's a collision
+        hit = false;
+
+        //Find the center points of each sprite
+        r1.centerX = r1.x + r1.width / 2;
+        r1.centerY = r1.y + r1.height / 2;
+        r2.centerX = r2.x + r2.width / 2;
+        r2.centerY = r2.y + r2.height / 2;
+
+        //Find the half-widths and half-heights of each sprite
+        r1.halfWidth = r1.width / 2;
+        r1.halfHeight = r1.height / 2;
+        r2.halfWidth = r2.width / 2;
+        r2.halfHeight = r2.height / 2;
+
+        //Calculate the distance vector between the sprites
+        vx = r1.centerX - r2.centerX;
+        vy = r1.centerY - r2.centerY;
+
+        //Figure out the combined half-widths and half-heights
+        combinedHalfWidths = r1.halfWidth + r2.halfWidth;
+        combinedHalfHeights = r1.halfHeight + r2.halfHeight;
+
+        //Check for a collision on the x axis
+        if (Math.abs(vx) < combinedHalfWidths) {
+
+        //A collision might be occurring. Check for a collision on the y axis
+        if (Math.abs(vy) < combinedHalfHeights) {
+
+            //There's definitely a collision happening
+            hit = true;
+        } else {
+
+            //There's no collision on the y axis
+            hit = false;
+        }
+        } else {
+
+        //There's no collision on the x axis
+        hit = false;
+        }
+
+        //`hit` will be either `true` or `false`
+        return hit;
+    };
+
+    //Start Function
+    function simulatorStart(){
+        quantidade_comida = 10; // Quantidade de comida a ser criado
+        quantidade_criaturas = 3; // Quantidade de criaturas a serem criadas
+        creatures = []; //Objetos de criaturas existentes
+        foods = []; //Objetos de comida existentes
+        epoch_time = 250; // Tempo por época
+        current_epoch = 1;
+
+        // The application will create a renderer using WebGL, if possible,
+        // with a fallback to a canvas render. It will also setup the ticker
+        // and the root stage PIXI.Container
+        //const app = new PIXI.Application();
+
+        // The application will create a canvas element for you that you
+        // can then insert into the DOM
+        document.getElementById("main").appendChild(app.view);
+        
+        //Adicionar Itens
+        app.loader
+        .add('apple', 'images/apple.png')
+        .add('creature', 'images/creature.png')
+        .on("progress", loadProgressHandler)
+        .load(setup);
+    }
+
+    function displayCreatureData(){
+        $("#creatures-list").empty();
+        creatures.forEach(creature => {
+            $("#creatures-list").append('<div style="border: solid;border-width: 1px;">\
+            <p>Criatura '+creature.id+'</p>\
+            <p>Alimento Consumido: '+creature.score+'</p>\
+            </div>')
+        });
+    }
+
+    function pause(){
+        
+        paused = !paused;
+        
+        if(paused){
+            $('#pause-button').html('Resume')
+        } else {
+            $('#pause-button').html('Pause')
+        }
+    }
+
+    function restart(){
+        // quantidade_comida = 10; // Quantidade de comida a ser criado
+        // quantidade_criaturas = 3; // Quantidade de criaturas a serem criadas
+        // creatures = []; //Objetos de criaturas existentes
+        // foods = []; //Objetos de comida existentes
+        epoch_time = 250; // Tempo por época
+        current_epoch = 1;
+    }
+
+    function contain(sprite, container) {
+
+        let collision = undefined;
+
+        //Left
+        if (sprite.x < container.x) {
+        sprite.x = container.x;
+        collision = "left";
+        }
+
+        //Top
+        if (sprite.y < container.y) {
+        sprite.y = container.y;
+        collision = "top";
+        }
+
+        //Right
+        if (sprite.x + sprite.width > container.width) {
+        sprite.x = container.width - sprite.width;
+        collision = "right";
+        }
+
+        //Bottom
+        if (sprite.y + sprite.height > container.height) {
+        sprite.y = container.height - sprite.height;
+        collision = "bottom";
+        }
+
+        //Return the `collision` value
+        return collision;
+    }
+</script>
+<script>
+    simulatorStart();
+    
+</script>
+</body>
+</html>
