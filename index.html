@@ -52,6 +52,9 @@
         var started = false;
         var switch_time;
         var epoch_done = false;
+        var best_creatures = [];
+
+        const movements = ["Direita", "Esquerda", "Baixo", "Cima", "Dir + Baixo", "Dir + Cima", "Esq + Baixo", "Esq + Cima"]
 
         function getRandomArbitrary(min, max) {
             return Math.random() * (max - min) + min;
@@ -180,28 +183,28 @@
                     epoch_done = true;
                     //Movimenta as criaturas pelo mapa no decorrer da época
                     creatures.forEach(creature => {
-                        //const sensed_items = getSensedItems(creature);
-
-                        //Caso sense algo (comida) mova até ela, senão ande aleatoriamente
-                        // if(sensed_items.foods.length > 0){
-                        //     let closestItem = null;
-                        //     sensed_items.foods.forEach(food => {
-                        //         if(closestItem === null){
-                        //             closestItem = food;
-                        //         } else if(food.distance < closestItem.distance){
-                        //             closestItem = food;
-                        //         }
-                        //     });
-                            
-                        //     moveToItem(creature, closestItem);
-                        // }else{
-                        //     estrategiaAleatoria(creature);
-                        // }
                         
 
                         if(creature.stamina > 0){
+                            var sensed_items = getSensedItems(creature);
+
+                            //Caso sense algo (comida) mova até ela, senão ande aleatoriamente
+                            if(sensed_items.foods.length > 0){
+                                let closestItem = null;
+                                sensed_items.foods.forEach(food => {
+                                    if(closestItem === null){
+                                        closestItem = food;
+                                    } else if(food.distance < closestItem.distance){
+                                        closestItem = food;
+                                    }
+                                });
+                                
+                                moveToItem(creature, closestItem);
+                            }else{
+                                estrategiaAleatoria(creature);
+                            }
+
                             epoch_done = false;
-                            estrategiaAleatoria(creature);
 
                             //Enquanto não der um movimento válido sempre sorteia novamente
                             if(creature.control == 0){ //Direita
@@ -324,7 +327,7 @@
             foods = []; //Objetos de comida existentes
             epoch_time = 0; // Tempo por época
             current_epoch = 1;
-            switch_time = 50; // Tempo para trocar de direção
+            switch_time = 200; // Tempo para trocar de direção
 
             $.getJSON('/start/'+ quantidade_criaturas, function(data){
                 creatures = data;
@@ -426,10 +429,12 @@
             foods.forEach(food => {
                 let distance = Math.sqrt(Math.pow(food.x - creature.ref.x, 2) + Math.pow(food.y - creature.ref.y, 2))
                 if(distance <= creature.sentidos){
-                    sensed_items.foods.push({...food, distance: distance});
+                    sensed_items.foods.push({x: food.x, y: food.y, distance: distance});
                 }
             });
-
+            if(sensed_items.foods.length > 0 && creature.id == 0){
+                console.log("ITEMS SENTIDOS:", sensed_items);
+            }
             return sensed_items;
         }
 
@@ -458,31 +463,32 @@
         function moveToItem(creature, item){
             console.log("CREATURE X: " + creature.ref.x, "CREATURE Y: " + creature.ref.y);
             console.log("ITEM X: " + item.x, "ITEM Y: " + item.y);
+
             if(creature.ref.x < item.x){
                 if(creature.ref.y < item.y){
-                    creature.control = 4;
+                    creature.control = 4; // Dir + Baixo
                 }else if(creature.ref.y > item.y){
-                    creature.control = 5;
+                    creature.control = 5; // Dir + Cima
                 }else{
-                    creature.control = 0;
+                    creature.control = 0; // Dir
                 }
             } else if(creature.ref.x > item.x){
                 if(creature.ref.y < item.y){
-                    creature.control = 6;
+                    creature.control = 6; // Esq + baixo
                 }else if(creature.ref.y > item.y){
-                    creature.control = 7;
+                    creature.control = 7; //Esq + Cima
                 }else{
-                    creature.control = 1;
+                    creature.control = 1; //Esq
                 }
             } else{
                 if(creature.ref.y < item.y){
-                    creature.control = 2;
+                    creature.control = 2; // Baixo
                 }else if(creature.ref.y > item.y){
-                    creature.control = 3;
+                    creature.control = 3; // Cima
                 }
             }
 
-            console.log("Moving to item", creature.control);
+            console.log("Moving to item: ", movements[creature.control]);
         }
 
         function evolve(){
@@ -490,8 +496,16 @@
             console.log("Criaturas: ", creatures)
 
             var creaturesToEvolve = [];
+            var bestCreature = null;
 
             creatures.forEach(element => {
+                //Armazena a melhor criatura dessa época
+                if(bestCreature === null){
+                    bestCreature = element;
+                } else if(bestCreature.score < element.score){
+                    bestCreature = element;
+                }
+
                 let newCreature = {};
                 newCreature.score = element.score;
                 newCreature.velocidade = element.velocidade;
@@ -500,6 +514,8 @@
                 newCreature.stamina = element.maxStamina;
                 creaturesToEvolve.push(newCreature);
             });
+
+            best_creatures.push(bestCreature);
 
             $.ajax({
                 type: "POST",
