@@ -53,6 +53,7 @@
         var switch_time;
         var epoch_done = false;
         var best_creatures = [];
+        var creature_identifiers = [];
 
         const movements = ["Direita", "Esquerda", "Baixo", "Cima", "Dir + Baixo", "Dir + Cima", "Esq + Baixo", "Esq + Cima"]
 
@@ -166,7 +167,10 @@
                     creature.height = creatures[index].tamanho;
 
                     //Quanto mais rapido mais colorido
-                    creature.tint = creatures[index].velocidade * 0xFFFFFF;
+                    creature.tint = 0xFFFFFF - (creatures[index].velocidade * 0x002222);
+                    if(creature.tint < 0xFF0000){
+                        creature.tint = 0xFF0000
+                    }
 
                     // Place anchor in the center
                     // apple.anchor.x = 0.5;
@@ -189,7 +193,7 @@
                     //     });
                     app.stage.addChild(creature);
                 }   
-
+                loadCreatureIdentifiers();
                 
             }
         }
@@ -210,6 +214,8 @@
                 if(!epoch_done){
 
                     epoch_done = true;
+                    let index = 0;
+
                     //Movimenta as criaturas pelo mapa no decorrer da época
                     creatures.forEach(creature => {
                         
@@ -241,24 +247,36 @@
                             //Enquanto não der um movimento válido sempre sorteia novamente
                             if(creature.control == 0){ //Direita
                                 creature.ref.x += creature.velocidade * multiplicador_velocidade;
+                                creature_identifiers[index].x += creature.velocidade * multiplicador_velocidade;
                             } else if(creature.control == 1){ //Esquerda
                                 creature.ref.x -= creature.velocidade * multiplicador_velocidade;
+                                creature_identifiers[index].x -= creature.velocidade * multiplicador_velocidade;
                             } else if(creature.control == 2){ //Baixo
                                 creature.ref.y += creature.velocidade * multiplicador_velocidade;
+                                creature_identifiers[index].y  += creature.velocidade * multiplicador_velocidade;
                             } else if(creature.control == 3){ //Cima
                                 creature.ref.y -= creature.velocidade * multiplicador_velocidade;
+                                creature_identifiers[index].y  -= creature.velocidade * multiplicador_velocidade;
                             } else if(creature.control == 4){ //Dir + Baixo
                                 creature.ref.x += creature.velocidade * multiplicador_velocidade;
                                 creature.ref.y += creature.velocidade * multiplicador_velocidade;
+                                creature_identifiers[index].x  += creature.velocidade * multiplicador_velocidade;
+                                creature_identifiers[index].y += creature.velocidade * multiplicador_velocidade;
                             } else if(creature.control == 5){ //Dir + Cima
                                 creature.ref.x += creature.velocidade * multiplicador_velocidade;
                                 creature.ref.y -= creature.velocidade * multiplicador_velocidade;
+                                creature_identifiers[index].x += creature.velocidade * multiplicador_velocidade;
+                                creature_identifiers[index].y -= creature.velocidade * multiplicador_velocidade;
                             } else if(creature.control == 6){ //Esq + Baixo
                                 creature.ref.x -= creature.velocidade * multiplicador_velocidade;
                                 creature.ref.y += creature.velocidade * multiplicador_velocidade;
+                                creature_identifiers[index].x -= creature.velocidade * multiplicador_velocidade;
+                                creature_identifiers[index].y  += creature.velocidade * multiplicador_velocidade;
                             } else if(creature.control == 7){ //Esq + Cima
                                 creature.ref.x -= creature.velocidade * multiplicador_velocidade;
                                 creature.ref.y -= creature.velocidade * multiplicador_velocidade;
+                                creature_identifiers[index].x  -= creature.velocidade * multiplicador_velocidade;
+                                creature_identifiers[index].y -= creature.velocidade * multiplicador_velocidade;
                             }   
 
                             if(epoch_time % 5 == 0){
@@ -282,6 +300,8 @@
                                 //There's no collision
                             }
                         });
+
+                        index++;
                     });
 
                 
@@ -562,11 +582,15 @@
                     foods.forEach(element => {
                         app.stage.removeChild(element);
                     })   
+                    creature_identifiers.forEach(element => {
+                        app.stage.removeChild(element);
+                    })
 
                     app.stage.removeChild(epoch_time_display);
                     app.stage.removeChild(epoch_display);
 
                     foods = [];
+                    creature_identifiers = [];
                     addFoods();
                     addCreatures();
                     loadTexts();
@@ -653,7 +677,10 @@
                 creature.height = creatures[index].tamanho;
                 
                 //Quanto mais rapido mais colorido
-                creature.tint = creatures[index].velocidade * 0xFFFFFF;
+                creature.tint = 0xFFFFFF - (creatures[index].velocidade * 0x002222);
+                if(creature.tint < 0xFF0000){
+                    creature.tint = 0xFF0000
+                }
 
                 // Place anchor in the center
                 // apple.anchor.x = 0.5;
@@ -677,6 +704,7 @@
                 //     });
                 app.stage.addChild(creature);
             }   
+            loadCreatureIdentifiers();
         }
 
         function loadTexts(params) {
@@ -695,6 +723,28 @@
             epoch_display.y = 24;
             app.stage.addChild(epoch_time_display);
             app.stage.addChild(epoch_display);
+        }
+
+        function loadCreatureIdentifiers(params) {
+            let style = new PIXI.TextStyle({
+            fontFamily: "Arial",
+            fontSize: 8,
+            fill: "white",
+            dropShadow: true,
+            dropShadowColor: "#000000",
+            dropShadowBlur: 4,
+            dropShadowAngle: Math.PI / 6,
+            dropShadowDistance: 6,
+            });
+            
+            
+            creatures.forEach(creature => {
+                let identifier = new PIXI.Text(creature.id, style);
+                identifier.x = creature.ref.x;
+                identifier.y = creature.ref.y - 12;
+                app.stage.addChild(identifier);
+                creature_identifiers.push(identifier)
+            });
         }
    
 
