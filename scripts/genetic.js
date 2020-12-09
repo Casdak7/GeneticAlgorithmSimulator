@@ -33,9 +33,16 @@ function createRandomPhenotype(){
 
     newPhenotype.score = 0;
     newPhenotype.velocidade = (Math.round(Math.random() * 3));
-    newPhenotype.tamanho = (Math.random() < .5 ? -1 : 1) * (Math.round(Math.random() * 16));
+    newPhenotype.tamanho = (Math.round(Math.random() * 32));
     newPhenotype.sentidos = 50 + (Math.random() < .5 ? -1 : 1) * (Math.round(Math.random() * 32));
     newPhenotype.stamina = 100 + (Math.random() < .5 ? -1 : 1) * (Math.round(Math.random() * 30));
+
+    if(newPhenotype.velocidade < 1){
+        newPhenotype.velocidade = 1;
+    }
+    if(newPhenotype.tamanho < 8){
+        newPhenotype.tamanho = 8;
+    }
 
     return newPhenotype;
 }
@@ -48,6 +55,13 @@ function mutationFunction(phenotype) {
     resultPhenotype.tamanho += (Math.random() < .5 ? -1 : 1) * (Math.round(Math.random() * 4));
     resultPhenotype.sentidos += (Math.random() < .5 ? -1 : 1) * (Math.round(Math.random() * 8));
     resultPhenotype.stamina += (Math.random() < .5 ? -1 : 1) * (Math.round(Math.random() * 10));
+
+    if(resultPhenotype.velocidade < 1){
+        resultPhenotype.velocidade = 1;
+    }
+    if(resultPhenotype.tamanho < 8){
+        resultPhenotype.tamanho = 8;
+    }
 
     //console.log("MUTATIONS: ", resultPhenotype);
     
