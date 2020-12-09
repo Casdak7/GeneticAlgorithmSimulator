@@ -164,23 +164,7 @@
 
         function setup() {
             console.log("All files loaded");
-            let style = new PIXI.TextStyle({
-            fontFamily: "Arial",
-            fontSize: 16,
-            fill: "white",
-            stroke: '#ff3300',
-            strokeThickness: 4,
-            dropShadow: true,
-            dropShadowColor: "#000000",
-            dropShadowBlur: 4,
-            dropShadowAngle: Math.PI / 6,
-            dropShadowDistance: 6,
-            });
-            epoch_time_display = new PIXI.Text(epoch_time, style);
-            epoch_display = new PIXI.Text(current_epoch, style);
-            epoch_display.y = 24;
-            app.stage.addChild(epoch_time_display);
-            app.stage.addChild(epoch_display);
+            loadTexts();
             app.ticker.add(delta => gameLoop(delta));
         }
         
@@ -343,25 +327,24 @@
             switch_time = 50; // Tempo para trocar de direção
 
             $.getJSON('/start/'+ quantidade_criaturas, function(data){
-                console.log(data);
                 creatures = data;
+
+                // The application will create a renderer using WebGL, if possible,
+                // with a fallback to a canvas render. It will also setup the ticker
+                // and the root stage PIXI.Container
+                //const app = new PIXI.Application();
+
+                // The application will create a canvas element for you that you
+                // can then insert into the DOM
+                document.getElementById("main").appendChild(app.view);
+                
+                //Adicionar Itens
+                app.loader
+                .add('apple', '/images/apple.png')
+                .add('creature', '/images/creature.png')
+                .on("progress", loadProgressHandler)
+                .load(setup);
             })
-
-            // The application will create a renderer using WebGL, if possible,
-            // with a fallback to a canvas render. It will also setup the ticker
-            // and the root stage PIXI.Container
-            //const app = new PIXI.Application();
-
-            // The application will create a canvas element for you that you
-            // can then insert into the DOM
-            document.getElementById("main").appendChild(app.view);
-            
-            //Adicionar Itens
-            app.loader
-            .add('apple', '/images/apple.png')
-            .add('creature', '/images/creature.png')
-            .on("progress", loadProgressHandler)
-            .load(setup);
         }
 
         function displayCreatureData(){
@@ -400,6 +383,7 @@
             } else {
                 $('#pause-button').attr('disabled',true)
                 $('#restart-button').html('Start')
+                
             }
         }
 
@@ -472,6 +456,8 @@
         }
 
         function moveToItem(creature, item){
+            console.log("CREATURE X: " + creature.ref.x, "CREATURE Y: " + creature.ref.y);
+            console.log("ITEM X: " + item.x, "ITEM Y: " + item.y);
             if(creature.ref.x < item.x){
                 if(creature.ref.y < item.y){
                     creature.control = 4;
@@ -523,14 +509,142 @@
                 cache: false,
                 success: function(data){
                     console.log(data);
+                    epoch_time = 0;
+                    current_epoch++;
+
                     creatures.forEach(element => {
                         app.stage.removeChild(element.ref);
-                        //Remove do array de comida
-                        //  const index = foods.indexOf(food);
                     })
+                    creatures = data;
+                    foods.forEach(element => {
+                        app.stage.removeChild(element);
+                    })   
+
+                    app.stage.removeChild(epoch_time_display);
+                    app.stage.removeChild(epoch_display);
+
+                    foods = [];
+                    addFoods();
+                    addCreatures();
+                    loadTexts();
+                    epoch_done = false;
                 }
             })
 
+        }
+
+        function addFoods(){
+            for (let index = 0; index < quantidade_comida; index++) {
+                var texture = PIXI.utils.TextureCache["/images/apple.png"];
+                // This creates a texture from a 'bunny.png' image
+                const apple = new PIXI.Sprite(texture);
+                    
+                const position_x = getRandomArbitrary(4, 20);
+                const position_y = getRandomArbitrary(4, 13);
+                    
+                // Setup the position of the bunny
+                apple.x = position_x * 32
+                apple.y = position_y * 32
+    
+                //Change the sprite's size
+                apple.width = 32;
+                apple.height = 32;
+    
+                // Place anchor in the center
+                // apple.anchor.x = 0.5;
+                // apple.anchor.y = 0.5;
+    
+                // Add the bunny to the scene we are building
+                foods.push(apple);
+                app.stage.addChild(apple);
+
+                
+            }
+        }
+
+        function addCreatures(params) {
+            for (let index = 0; index < quantidade_criaturas; index++) {
+                // This creates a texture from a 'bunny.png' image
+                var texture = PIXI.utils.TextureCache["/images/creature.png"];
+                const creature = new PIXI.Sprite(texture);
+                    
+                let position_x;
+                let position_y;
+
+                var position_type = Math.round(getRandomArbitrary(0 , 3));
+
+                switch (position_type) {
+                    case 0:
+                        position_x = 0;
+                        position_y = getRandomArbitrary(0, 17);
+                        break;
+                    case 1:
+                        position_x = 24;
+                        position_y = getRandomArbitrary(0, 17);
+                        break;
+                    case 2:
+                        position_x = getRandomArbitrary(0, 24);
+                        position_y = 0;
+                        break;
+                    case 3:
+                        position_x = getRandomArbitrary(0, 24);
+                        position_y = 17;
+                        break;
+                
+                    default:
+                        position_x = getRandomArbitrary(0, 2);
+                        position_y = getRandomArbitrary(0, 17);
+                        break;
+                }
+                    
+                // Setup the position of the bunny
+                creature.x = position_x * 32
+                creature.y = position_y * 32
+
+                //Change the sprite's size
+                creature.width = 32;
+                creature.height = 32;
+
+                // Place anchor in the center
+                // apple.anchor.x = 0.5;
+                // apple.anchor.y = 0.5;
+
+                // Add the creature to the scene we are building
+                creatures[index].id = index;
+                creatures[index].ref = creature;
+                creatures[index].control = 0;
+                creatures[index].score = 0;
+                creatures[index].maxStamina = creatures[index].stamina;
+                // creatures.push({
+                //     id: index,
+                //     ref: creature, 
+                //     control: 0,
+                //     score: 0,
+                //     velocidade: 1,
+                //     tamanho: 0,
+                //     sentidos: 96,
+                //     stamina: 100,
+                //     });
+                app.stage.addChild(creature);
+            }   
+        }
+
+        function loadTexts(params) {
+            let style = new PIXI.TextStyle({
+            fontFamily: "Arial",
+            fontSize: 16,
+            fill: "white",
+            dropShadow: true,
+            dropShadowColor: "#000000",
+            dropShadowBlur: 4,
+            dropShadowAngle: Math.PI / 6,
+            dropShadowDistance: 6,
+            });
+            epoch_time_display = new PIXI.Text("Elapsed Time: " + epoch_time, style);
+            epoch_display = new PIXI.Text("Epoch: " + current_epoch, style);
+            epoch_display.y = 24;
+            app.stage.addChild(epoch_time_display);
+            app.stage.addChild(epoch_display);
         }
    
 
