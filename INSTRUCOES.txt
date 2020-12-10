@@ -1,0 +1,14 @@
+É necessário que tenha instalado o npm e o nodejs.
+
+Caso não possue veja como instalar em: https://nodejs.org/en/
+
+Para iniciar o algoritmo digite no terminal, na raiz deste diretorio:
+
+$ node app.js
+
+que deve exibir "Servidor rodando na url http://localhost:8081..."
+
+acesse http://localhost:8081 no seu navegador e é só apertar start!
+
+PAUSE - para momentaneamente o simulador
+STOP - volta para o inicio do simulador

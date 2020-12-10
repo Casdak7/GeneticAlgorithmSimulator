@@ -34,9 +34,7 @@ app.get('/start/:size', async function (req, res) {
 app.post('/evolve', async function(req, res) {
     console.log("TO EVOLVE: ", req.body.population)
     var population = req.body.population;
-    console.log("POPULATION BEFORE CLONE: ", geneticAlgorithmInstance.population())
     geneticAlgorithmInstance = await geneticAlgorithmInstance.clone({population: population})
-    console.log("POPULATION AFTER CLONE: ", geneticAlgorithmInstance.population())
     await geneticAlgorithmInstance.evolve()
     population = await geneticAlgorithmInstance.population();
     console.log("EVOLVED: ", population)
