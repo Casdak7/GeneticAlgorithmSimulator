@@ -32,7 +32,7 @@ function createRandomPhenotype(){
     var newPhenotype = {};
 
     newPhenotype.score = 0;
-    newPhenotype.velocidade = (Math.round(Math.random() * 3));
+    newPhenotype.velocidade = (Math.round(Math.random() * 5));
     newPhenotype.tamanho = (Math.round(Math.random() * 32));
     newPhenotype.sentidos = 50 + (Math.random() < .5 ? -1 : 1) * (Math.round(Math.random() * 32));
     newPhenotype.stamina = 100 + (Math.random() < .5 ? -1 : 1) * (Math.round(Math.random() * 30));
@@ -52,7 +52,7 @@ function mutationFunction(phenotype) {
     var resultPhenotype = cloneJSON(phenotype)
 
     resultPhenotype.velocidade += (Math.random() < .5 ? -1 : 1) * (Math.round(Math.random() * 2));
-    resultPhenotype.tamanho += (Math.random() < .5 ? -1 : 1) * (Math.round(Math.random() * 4));
+    resultPhenotype.tamanho += (Math.random() < .5 ? -1 : 1) * (Math.round(Math.random() * 8));
     resultPhenotype.sentidos += (Math.random() < .5 ? -1 : 1) * (Math.round(Math.random() * 8));
     resultPhenotype.stamina += (Math.random() < .5 ? -1 : 1) * (Math.round(Math.random() * 10));
 

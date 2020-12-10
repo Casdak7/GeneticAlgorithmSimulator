@@ -290,7 +290,7 @@
                             epoch_done = false;
 
                             let multiplicador_velocidade = 0.5;
-                            let multiplicador_tamanho = 1/16;
+                            let multiplicador_tamanho = 1/8;
 
                             //Movimenta a criatura e seu marcador
                             if(creature.control == 0){ //Direita
@@ -330,14 +330,13 @@
                             if(epoch_time % 5 == 0){
                                 creature.stamina -= (creature.velocidade + (multiplicador_tamanho * creature.tamanho));
                             }
-                        }
-
-                        
-                        //Confere se colidiu alguma comida
-                        foods.forEach(food => {    
-                            if (hitTestRectangle(creature.ref, food)) {
-                                food.tint = 0xff3300;
-                                app.stage.removeChild(food);
+                            
+                            
+                            //Confere se colidiu alguma comida
+                            foods.forEach(food => {    
+                                if (hitTestRectangle(creature.ref, food)) {
+                                    food.tint = 0xff3300;
+                                    app.stage.removeChild(food);
                                 //Remove do array de comida
                                 const k = foods.indexOf(food);
                                 if (k > -1) {
@@ -348,7 +347,7 @@
                                 //There's no collision
                             }
                         });
-
+                        
                         creatures.forEach(otherCreature => {    
                             if(otherCreature.id != creature.id){
                                 if(otherCreature.tamanho < creature.tamanho - 8){
@@ -370,6 +369,7 @@
                                 }
                             }
                         });
+                    }
 
                     
                         index++;
@@ -480,7 +480,7 @@
                 <p>Criatura '+creature.id+'</p>\
                 <p>Alimento Consumido: '+creature.score+'</p>\
                 <p>Velocidade: '+creature.velocidade+'</p>\
-                <p>Tamanho: '+ (32 + creature.tamanho) +'</p>\
+                <p>Tamanho: '+ (creature.tamanho) +'</p>\
                 <p>Sentidos: '+creature.sentidos+'</p>\
                 <p>Stamina: '+creature.stamina+'</p>\
                 </div>')
